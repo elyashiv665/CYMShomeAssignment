@@ -1,0 +1,51 @@
+version: "1"
+services:
+  server:
+    container_name: server
+    image: server
+    restart: always
+    build: ./
+    networks: 
+      - network
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+      - rabbitmq
+    environment:
+      MESSAGES_QUEUE_NAME: "${MESSAGES_QUEUE_NAME}"
+
+  mongo:
+    container_name: mongo
+    image: mongo:latest
+    ports:
+      - '27017:27017'
+    tty: true
+    networks: 
+      - network
+  
+  publish_message:
+    container_name: publish_message
+    image: publish_message
+    build: 
+      context: ./
+      dockerfile: ./publishMessage/Dockerfile
+    networks: 
+      - network
+    depends_on:
+      - rabbitmq
+      - mongo
+    environment:
+      MESSAGES_QUEUE_NAME: "${MESSAGES_QUEUE_NAME}"
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq
+    ports:
+      - "5672:5672"
+    networks:
+      - network
+      
+networks:
+  network: 
+    driver: bridge
