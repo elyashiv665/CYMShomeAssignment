@@ -33,4 +33,4 @@ async function publishToQueue(channel, queueName, message){
     }
 }
 
-export {connect, declareQueue,consumeFromQueue, createChannel};
+export {connect, declareQueue,consumeFromQueue, createChannel, publishToQueue};

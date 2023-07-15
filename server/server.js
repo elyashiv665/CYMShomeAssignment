@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import {connect, createChannel, declareQueue} from './utils/rabbitMq/rabbitMQ.js';
+import {connect, createChannel, declareQueue, publishToQueue} from './utils/rabbitMq/rabbitMQ.js';
 import express from 'express';
 
 // Connect to MongoDB database
@@ -56,10 +56,11 @@ app.post('/message', async (req, res) => {
               message
             }
         };
-        publishToQueue(channel, process.env.MESSAGES_QUEUE_NAME, task)
+        await publishToQueue(channel, process.env.MESSAGES_QUEUE_NAME, task)
         res.json({statusCode: 201, message: 'Successfully save message.'})
     }catch(err){
-        console.log('error publish to queue')
+        console.log('error publish to queue', err);
+        res.json({statusCode: 500, message: 'Internal server error'})
     }
 });
 
