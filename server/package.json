@@ -10,6 +10,7 @@
     "keywords": [],
     "author": "",
     "license": "ISC",
+    "type": "module",
     "devDependencies": {},
     "dependencies": {
       "@types/express": "^4.17.17",

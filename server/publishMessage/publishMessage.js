@@ -1,13 +1,26 @@
-const {connect, createChannel, consumeFromQueue} = require('./utils.utils.js');
+import * as amqp from 'amqplib';
+import {connect, createChannel, declareQueue} from './utils/rabbitMq/rabbitMQ.js';
+
+
+
+let channel;
+connect().then(async(connection) => {
+    channel = await createChannel(connection);
+  })
+  .catch((error) => console.error('Error connecting to rabbitmq:', error));
 
 async function processTask(task){
     console.log('processTask', task)
   };
   
-async function pickupTask(){
+async function pickupTasks(){
     try{
-      const connection = await connect();
-      const channel = await createChannel(connection);
+      console.log('start pickupTasks');
+      if(!connection || !channel){
+        console.log('No connection');
+        return;
+      }
+
       let isQueueEmpty = false;
       while (!isQueueEmpty) {
         await consumeFromQueue(channel, process.env.MESSAGES_QUEUE_NAME, async (message) => {
@@ -21,6 +34,7 @@ async function pickupTask(){
           }
         });
       }
+      console.log('end pickupTasks');
       await channel.close();
       await connection.close();
     
@@ -30,4 +44,4 @@ async function pickupTask(){
     
   };
 
-pickupTask();
+setInterval(pickupTasks, parseInt(process.env.PUBLISH_MESSAGE_INTERVAL)); 

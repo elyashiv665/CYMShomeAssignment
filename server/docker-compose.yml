@@ -37,6 +37,7 @@ services:
       - mongo
     environment:
       MESSAGES_QUEUE_NAME: "${MESSAGES_QUEUE_NAME}"
+      PUBLISH_MESSAGE_INTERVAL: "${PUBLISH_MESSAGE_INTERVAL}"
 
   rabbitmq:
     container_name: rabbitmq

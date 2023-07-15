@@ -1,14 +1,13 @@
-async function connect(amqp){
-    let connection;
-    console.log('amqp', amqp.connect)
+import * as amqp from 'amqplib';
 
+async function connect(){
+    let connection;
     await amqp.connect('amqp://rabbitmq')
     .then((_connection) => {console.log('Connected to rabbitmq'); connection = _connection})
     .catch((error) => console.error('Error connecting to rabbitmq:', error));
-    
     return connection;
-    }
-  
+}
+
 async function createChannel(connection){
     let channel;
     connection.createChannel()
@@ -34,4 +33,4 @@ async function publishToQueue(channel, queueName, message){
     }
 }
 
-module.exports = {declareQueue, connect,consumeFromQueue, createChannel};
+export {connect, declareQueue,consumeFromQueue, createChannel};
