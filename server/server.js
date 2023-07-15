@@ -24,7 +24,7 @@ app.use(express.urlencoded());
 app.use(express.json());  
 
 
-app.post('/messages', async (req, res) => {
+app.post('/message', async (req, res) => {
     const message = req.body?.message;
     if(!message){
         console.error('No message specified');
