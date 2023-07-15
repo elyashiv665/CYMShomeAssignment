@@ -1,47 +1,85 @@
-import * as amqp from 'amqplib';
-import {connect, createChannel, declareQueue} from './utils/rabbitMq/rabbitMQ.js';
+import {connect, createChannel, consumeFromQueue, publishToQueue} from './utils/rabbitMq/rabbitMQ.js';
+import Message from './utils/mongo/models.js';
+import mongoose from 'mongoose';
 
+let channel,connection;
 
+// Connect to MongoDB database
+mongoose
+  .connect('mongodb://mongo/domains')
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((error) => console.error('Error connecting to MongoDB:', error));
 
-let channel;
-connect().then(async(connection) => {
-    channel = await createChannel(connection);
+// Connect to rabbitmq
+connect()
+.then(async(_connection) => {createChannel(_connection)
+    .then((_channel => { 
+        channel = _channel;
+        connection = _connection; }));
   })
   .catch((error) => console.error('Error connecting to rabbitmq:', error));
 
-async function processTask(task){
-    console.log('processTask', task)
+async function createInDB(message) {
+    const newMessage = new Message({
+      data: message
+    });
+    await newMessage.save();
+}
+
+
+
+async function processTask(incomeTask){
+      const outcomeTask = {
+        id: incomeTask.id,
+        data: incomeTask.data
+      };    
+      await createInDB(incomeTask.data).then(async() =>{
+        outcomeTask.status = 'success';
+      }) .catch((error) => {
+        console.error('Error create message in DB:', error);
+        outcomeTask.status = 'error';
+        
+      });
+      try{
+        await publishToQueue(channel, process.env.SAVED_MESSAGES_QUEUE_NAME, JSON.stringify(outcomeTask));
+      }catch(err){
+        console.error(`Error publish task: ${outcomeTask} to queue:`, err);
+
+      }
+
   };
   
 async function pickupTasks(){
     try{
-      console.log('start pickupTasks');
-      if(!connection || !channel){
+      if(!channel){
         console.log('No connection');
         return;
       }
 
       let isQueueEmpty = false;
       while (!isQueueEmpty) {
-        await consumeFromQueue(channel, process.env.MESSAGES_QUEUE_NAME, async (message) => {
+        await consumeFromQueue(channel, process.env.PUBLISH_MESSAGES_QUEUE_NAME, async (message) => {
           if (message !== null) {
+            console.log('message consumed from queue');
             const task = JSON.parse(message.content.toString());
             await processTask(task);
-            console.log(`Consumer started for ${process.env.MESSAGES_QUEUE_NAME}`);
           } else {
             isQueueEmpty = true;
             console.log("No tasks remaining. Queue is empty.");
           }
         });
       }
-      console.log('end pickupTasks');
-      await channel.close();
-      await connection.close();
-    
     }catch(error){
       console.error('error while updating data', error);
     }
     
   };
 
-setInterval(pickupTasks, parseInt(process.env.PUBLISH_MESSAGE_INTERVAL)); 
+try{
+// setInterval(pickupTasks, parseInt(process.env.PUBLISH_MESSAGE_INTERVAL)); 
+  setInterval(pickupTasks, 5000); 
+}catch(err){
+  console.log('error publish messages', err);
+  await channel.close();
+  await connection.close();
+}

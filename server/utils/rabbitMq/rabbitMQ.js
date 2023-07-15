@@ -25,12 +25,7 @@ async function declareQueue(channel, queueName) {
 }
 
 async function publishToQueue(channel, queueName, message){
-    try{
       await channel.sendToQueue(queueName, Buffer.from(message));
-      console.log('Task published to the queue.');
-    }catch(err){
-      console.error(`failed to update for ${queueName} and task: ${message}` + err)
-    }
 }
 
 export {connect, declareQueue,consumeFromQueue, createChannel, publishToQueue};

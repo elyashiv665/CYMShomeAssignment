@@ -13,7 +13,8 @@ services:
       - mongo
       - rabbitmq
     environment:
-      MESSAGES_QUEUE_NAME: "${MESSAGES_QUEUE_NAME}"
+      PUBLISH_MESSAGES_QUEUE_NAME: "${PUBLISH_MESSAGES_QUEUE_NAME}"
+      SAVED_MESSAGES_QUEUE_NAME: "${SAVED_MESSAGES_QUEUE_NAME}"
 
   mongo:
     container_name: mongo
@@ -36,8 +37,9 @@ services:
       - rabbitmq
       - mongo
     environment:
-      MESSAGES_QUEUE_NAME: "${MESSAGES_QUEUE_NAME}"
+      PUBLISH_MESSAGES_QUEUE_NAME: "${PUBLISH_MESSAGES_QUEUE_NAME}"
       PUBLISH_MESSAGE_INTERVAL: "${PUBLISH_MESSAGE_INTERVAL}"
+      SAVED_MESSAGES_QUEUE_NAME: "${SAVED_MESSAGES_QUEUE_NAME}"
 
   rabbitmq:
     container_name: rabbitmq
