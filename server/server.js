@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import {connect, createChannel, declareQueue, publishToQueue} from './utils/rabbitMq/rabbitMQ.js';
 import express from 'express';
-
+import http from 'http';
+import {Server} from 'socket.io';
 // Connect to MongoDB database
 mongoose
   .connect('mongodb://mongo/domains')
@@ -24,20 +25,26 @@ app.use(express.urlencoded());
 app.use(express.json());  
 
 
-app.post('/message', async (req, res) => {
-    const message = req.body?.message;
+const server = http.createServer(app);
+
+const io = new Server(server, {
+    cors: {
+        origin: process.env.SERVER_URL,
+        method: ['POST']
+    }
+})
+
+io.on('new_message', async (data) => {
+    const message = data?.message;
     if(!message){
         console.error('No message specified');
-        res.json({
-            statusCode: 400,
-            message: 'No message specified'
-        })
+        io.emit('error');
         return;
     }
 
     if(!channel){
         console.log('no connection');
-        res.json({statusCode: 500, message: 'connection error'})
+        io.emit('error');
         return;
     }
 
@@ -48,7 +55,7 @@ app.post('/message', async (req, res) => {
         }
     }catch(error){
         console.error('Error creating queue');
-        res.json({statusCode: 500, message: 'connection error'});
+        io.emit('error');
         return;
     }
     try{
@@ -58,14 +65,20 @@ app.post('/message', async (req, res) => {
           };
         await publishToQueue(channel, process.env.PUBLISH_MESSAGES_QUEUE_NAME, JSON.stringify(task));
 
-        res.json({statusCode: 201, message: `Successfully save message: ${message}`})
+        io.emit('pending', task);
     }catch(err){
         console.log('error publish to queue', err);
-        res.json({statusCode: 500, message: 'Internal server error'})
+        io.emit('error');
     }
 });
 
-app.listen(port, async(err) => {
+
+io.on("connection", (socket) => {
+    console.log(socket)
+})
+
+
+server.listen(port, async(err) => {
     if (err) {
         console.log("Error in server setup")
         console.error(error);
