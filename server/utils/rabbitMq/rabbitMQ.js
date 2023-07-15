@@ -10,7 +10,7 @@ async function connect(){
 
 async function createChannel(connection){
     let channel;
-    connection.createChannel()
+    await connection.createChannel()
     .then((_channel) => {console.log('createChannel to rabbitmq'); channel = _channel})
     .catch((error) => console.error('Error createChannel to rabbitmq:', error));
     return channel;

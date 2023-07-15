@@ -9,11 +9,12 @@ mongoose
   .catch((error) => console.error('Error connecting to MongoDB:', error));
  
 let channel;
-connect().then(async(connection) => {
-    channel = await createChannel(connection);
+connect()
+.then(async(connection) => {createChannel(connection)
+    .then((_channel => { 
+        channel = _channel }));
   })
   .catch((error) => console.error('Error connecting to rabbitmq:', error));
-  
 
 const app = express();
 const port = 3000;
