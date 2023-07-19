@@ -30,9 +30,12 @@ async function createInDB(message) {
 
 async function processTask(incomeTask){
       const outcomeTask = {
-        id: incomeTask.id,
-        data: incomeTask.data
+        clientId: incomeTask.clientId,
+        data: incomeTask.data,
+        messageId: incomeTask.messageId,
+        count: incomeTask.count
       };    
+      console.log('outcomeTask', outcomeTask)
       await createInDB(incomeTask.data).then(async() =>{
         outcomeTask.status = 'success';
       }) .catch((error) => {
@@ -41,7 +44,12 @@ async function processTask(incomeTask){
         
       });
       try{
+        const existQueue = await channel.assertQueue(process.env.SAVED_MESSAGES_QUEUE_NAME)
+        if(!existQueue){
+            await declareQueue(channel, process.env.SAVED_MESSAGES_QUEUE_NAME);
+        }
         await publishToQueue(channel, process.env.SAVED_MESSAGES_QUEUE_NAME, JSON.stringify(outcomeTask));
+        console.log('successfully publish to queue:', JSON.stringify(outcomeTask));
       }catch(err){
         console.error(`Error publish task: ${outcomeTask} to queue:`, err);
 
